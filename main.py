@@ -8,8 +8,8 @@ import tempfile
 import subprocess
 
 # NOTES FOR ABE:
-# MESSAGES SENDING TWICE
-# OUTPUT FILES STILL NOT BEING FOUND
+# Might have fixed output name sending with "output_input_..."
+# Added on_disconnect and on_connection functions in case of disconnection
 
 if os.path.exists(os.getcwd() + "/config.json"):
 
@@ -17,7 +17,7 @@ if os.path.exists(os.getcwd() + "/config.json"):
         configData = json.load(f)
 
 else:
-    configTemplate = {"TOKEN": "", "Prefix": "!"}
+    configTemplate = {"Token": "", "Prefix": "!"}
 
     with open(os.getcwd() + "/config.json", "w+") as f:
         json.dump(configTemplate, f)
@@ -39,6 +39,15 @@ async def on_ready():
     process_queue.start()
 
 
+@client.event
+async def on_disconnect():
+    print(f"Connection Terminated, Shutting down")
+
+
+async def on_connect():
+    print(f"Connection Found, Powering up")
+
+
 file_queue = []
 file_channels = {}
 
@@ -53,7 +62,7 @@ async def process_queue():
         print(f'File path: {file_path}')
 
         # Extract the filename without extension
-        file_name = os.path.splitext(os.path.basename(file_path))[0].replace('_input', '')
+        file_name = os.path.splitext(os.path.basename(file_path))[0].replace('input_', '')
 
         try:
             # Check if the file exists
@@ -121,7 +130,8 @@ async def on_message(message):
                         # Files in temp_dir are automatically deleted when the context ends
 
                 else:
-                    await message.channel.send(f"Please send a webm file for conversion. Skipping '{attachment.filename}'.")
+                    await message.channel.send(
+                        f"Please send a webm file for conversion. Skipping '{attachment.filename}'.")
 
     if message.content.startswith('!delete'):
         async for msg in message.channel.history(limit=2):  # Get the last two messages
